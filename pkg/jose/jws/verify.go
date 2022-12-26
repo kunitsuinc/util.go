@@ -8,7 +8,6 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"hash"
@@ -26,88 +25,83 @@ var (
 	ErrInvalidAlgorithm            = errors.New(`jws: invalid algorithm`)
 )
 
-func VerifySignature(token string, key crypto.PublicKey) error { //nolint:funlen,cyclop
+func VerifySignature(token string, key any) (header *Header, payload string, err error) { //nolint:funlen,cyclop
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {
-		return ErrInvalidTokenReceived
+		return nil, "", ErrInvalidTokenReceived
 	}
 
-	headerJSON, err := base64.RawURLEncoding.DecodeString(parts[0])
-	if err != nil {
-		return fmt.Errorf("invalid header: %w", err)
-	}
-
-	header := new(Header)
-	if err := json.Unmarshal(headerJSON, header); err != nil {
-		return fmt.Errorf("invalid header: %w", err)
+	header = new(Header)
+	if err := header.Decode(parts[0]); err != nil {
+		return nil, "", fmt.Errorf("invalid header: %w", err)
 	}
 
 	signingInput := parts[0] + "." + parts[1]
 	signature, err := base64.RawURLEncoding.DecodeString(parts[2])
 	if err != nil {
-		return fmt.Errorf("invalid signature: %w", err)
+		return nil, "", fmt.Errorf("invalid signature: %w", err)
 	}
 
 	// "alg" (Algorithm) Header Parameter Values for JWS - JSON Web Algorithms (JWA) ref. https://www.rfc-editor.org/rfc/rfc7518#section-3.1
 	switch header.Algorithm {
 	case jwa.HS256:
 		if err := verifyHS(signature, signingInput, key, sha256.New); err != nil {
-			return fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, err)
+			return nil, "", fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, err)
 		}
 	case jwa.HS384:
 		if err := verifyHS(signature, signingInput, key, sha512.New384); err != nil {
-			return fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, err)
+			return nil, "", fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, err)
 		}
 	case jwa.HS512:
 		if err := verifyHS(signature, signingInput, key, sha512.New); err != nil {
-			return fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, err)
+			return nil, "", fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, err)
 		}
 	case jwa.RS256:
 		if err := verifyRS(signature, signingInput, key, sha256.New, crypto.SHA256); err != nil {
-			return fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, err)
+			return nil, "", fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, err)
 		}
 	case jwa.RS384:
 		if err := verifyRS(signature, signingInput, key, sha512.New384, crypto.SHA384); err != nil {
-			return fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, err)
+			return nil, "", fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, err)
 		}
 	case jwa.RS512:
 		if err := verifyRS(signature, signingInput, key, sha512.New, crypto.SHA512); err != nil {
-			return fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, err)
+			return nil, "", fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, err)
 		}
 	case jwa.ES256:
 		if err := verifyES(signature, signingInput, key, crypto.SHA256, 32); err != nil {
-			return fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, err)
+			return nil, "", fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, err)
 		}
 	case jwa.ES384:
 		if err := verifyES(signature, signingInput, key, crypto.SHA384, 48); err != nil {
-			return fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, err)
+			return nil, "", fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, err)
 		}
 	case jwa.ES512:
 		if err := verifyES(signature, signingInput, key, crypto.SHA512, 66); err != nil {
-			return fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, err)
+			return nil, "", fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, err)
 		}
 	case jwa.PS256:
 		if err := verifyPS(signature, signingInput, key, sha256.New, crypto.SHA256, &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthAuto}); err != nil {
-			return fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, err)
+			return nil, "", fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, err)
 		}
 	case jwa.PS384:
 		if err := verifyPS(signature, signingInput, key, sha512.New384, crypto.SHA384, &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthAuto}); err != nil {
-			return fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, err)
+			return nil, "", fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, err)
 		}
 	case jwa.PS512:
 		if err := verifyPS(signature, signingInput, key, sha512.New, crypto.SHA512, &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthAuto}); err != nil {
-			return fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, err)
+			return nil, "", fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, err)
 		}
 	case jwa.None:
-		return fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, ErrAlgorithmNoneIsNotSupported)
+		return nil, "", fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, ErrAlgorithmNoneIsNotSupported)
 	default:
-		return fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, ErrInvalidAlgorithm)
+		return nil, "", fmt.Errorf("alg=%s: key=%T: %w", header.Algorithm, key, ErrInvalidAlgorithm)
 	}
 
-	return nil
+	return header, parts[1], nil
 }
 
-func verifyHS(signature []byte, signingInput string, key crypto.PublicKey, hashNewFunc func() hash.Hash) error {
+func verifyHS(signature []byte, signingInput string, key any, hashNewFunc func() hash.Hash) error {
 	keyBytes, ok := key.([]byte)
 	if !ok {
 		return ErrInvalidKeyReceived
@@ -120,7 +114,7 @@ func verifyHS(signature []byte, signingInput string, key crypto.PublicKey, hashN
 	return nil
 }
 
-func verifyRS(signature []byte, signingInput string, key crypto.PublicKey, hashNewFunc func() hash.Hash, cryptoHash crypto.Hash) error {
+func verifyRS(signature []byte, signingInput string, key any, hashNewFunc func() hash.Hash, cryptoHash crypto.Hash) error {
 	pub, ok := key.(*rsa.PublicKey)
 	if !ok {
 		return ErrInvalidKeyReceived
@@ -133,7 +127,7 @@ func verifyRS(signature []byte, signingInput string, key crypto.PublicKey, hashN
 	return nil
 }
 
-func verifyES(signature []byte, signingInput string, key crypto.PublicKey, cryptoHash crypto.Hash, keySize int) error {
+func verifyES(signature []byte, signingInput string, key any, cryptoHash crypto.Hash, keySize int) error {
 	pub, ok := key.(*ecdsa.PublicKey)
 	if !ok {
 		return ErrInvalidKeyReceived
@@ -151,7 +145,7 @@ func verifyES(signature []byte, signingInput string, key crypto.PublicKey, crypt
 	return nil
 }
 
-func verifyPS(signature []byte, signingInput string, key crypto.PublicKey, hashNewFunc func() hash.Hash, cryptoHash crypto.Hash, opts *rsa.PSSOptions) error {
+func verifyPS(signature []byte, signingInput string, key any, hashNewFunc func() hash.Hash, cryptoHash crypto.Hash, opts *rsa.PSSOptions) error {
 	pub, ok := key.(*rsa.PublicKey)
 	if !ok {
 		return ErrInvalidKeyReceived

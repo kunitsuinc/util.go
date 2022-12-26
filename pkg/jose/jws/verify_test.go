@@ -443,7 +443,8 @@ func TestVerify(t *testing.T) {
 		t, k, v := t, testName, testCase
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
-			v.ResultHandler(t, jws.VerifySignature(v.JWT, v.Key))
+			_, _, err := jws.VerifySignature(v.JWT, v.Key)
+			v.ResultHandler(t, err)
 		})
 	}
 }
