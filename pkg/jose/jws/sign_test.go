@@ -234,6 +234,7 @@ var testCasesSign = map[string]testCaseSign{
 				t.Errorf("%s: err != nil: %v", t.Name(), err)
 			}
 			token := testCase.SigningInput + "." + actual
+			t.Logf("👀: token: %s", token)
 			if _, _, err := jws.VerifySignature(token, must.One(x509z.ParseECDSAPublicKeyPEM([]byte(testz.TestECDSAPublicKey256BitPEM)))); err != nil {
 				t.Errorf("%s: expect(%v) != actual(%v): token: %s", t.Name(), nil, err, token)
 			}
@@ -271,6 +272,7 @@ var testCasesSign = map[string]testCaseSign{
 				t.Errorf("%s: err != nil: %v", t.Name(), err)
 			}
 			token := testCase.SigningInput + "." + actual
+			t.Logf("👀: token: %s", token)
 			if _, _, err := jws.VerifySignature(token, must.One(x509z.ParseECDSAPublicKeyPEM([]byte(testz.TestECDSAPublicKey384BitPEM)))); err != nil {
 				t.Errorf("%s: expect(%v) != actual(%v): token: %s", t.Name(), nil, err, token)
 			}
@@ -297,6 +299,7 @@ var testCasesSign = map[string]testCaseSign{
 				t.Errorf("%s: err != nil: %v", t.Name(), err)
 			}
 			token := testCase.SigningInput + "." + actual
+			t.Logf("👀: token: %s", token)
 			if _, _, err := jws.VerifySignature(token, must.One(x509z.ParseECDSAPublicKeyPEM([]byte(testz.TestECDSAPublicKey521BitPEM)))); err != nil {
 				t.Errorf("%s: expect(%v) != actual(%v): token: %s", t.Name(), nil, err, token)
 			}
@@ -324,6 +327,7 @@ var testCasesSign = map[string]testCaseSign{
 				t.Errorf("%s: err != nil: %v", t.Name(), err)
 			}
 			token := testCase.SigningInput + "." + actual
+			t.Logf("👀: token: %s", token)
 			if _, _, err := jws.VerifySignature(token, must.One(x509z.ParseRSAPublicKeyPEM([]byte(testz.TestRSAPublicKey2048BitPEM)))); err != nil {
 				t.Errorf("%s: expect(%v) != actual(%v): token: %s", t.Name(), nil, err, token)
 			}
@@ -365,6 +369,7 @@ var testCasesSign = map[string]testCaseSign{
 				t.Errorf("%s: err != nil: %v", t.Name(), err)
 			}
 			token := testCase.SigningInput + "." + actual
+			t.Logf("👀: token: %s", token)
 			if _, _, err := jws.VerifySignature(token, must.One(x509z.ParseRSAPublicKeyPEM([]byte(testz.TestRSAPublicKey2048BitPEM)))); err != nil {
 				t.Errorf("%s: expect(%v) != actual(%v): token: %s", t.Name(), nil, err, token)
 			}
@@ -391,6 +396,7 @@ var testCasesSign = map[string]testCaseSign{
 				t.Errorf("%s: err != nil: %v", t.Name(), err)
 			}
 			token := testCase.SigningInput + "." + actual
+			t.Logf("👀: token: %s", token)
 			if _, _, err := jws.VerifySignature(token, must.One(x509z.ParseRSAPublicKeyPEM([]byte(testz.TestRSAPublicKey2048BitPEM)))); err != nil {
 				t.Errorf("%s: expect(%v) != actual(%v): token: %s", t.Name(), nil, err, token)
 			}

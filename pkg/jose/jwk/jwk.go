@@ -38,7 +38,7 @@ type JSONWebKey struct {
 	PublicKeyUse string `json:"use,omitempty"`
 	// KeyOperations: "key_ops" parameter identifies the operation(s) for which the key is intended to be used.
 	//	- ref. https://www.rfc-editor.org/rfc/rfc7517#section-4.3
-	KeyOperations string `json:"key_ops,omitempty"` //nolint:tagliatelle
+	KeyOperations []string `json:"key_ops,omitempty"` //nolint:tagliatelle
 	// Algorithm: "alg" parameter identifies the algorithm intended for use with the key.
 	//	- ref. https://www.rfc-editor.org/rfc/rfc7517#section-4.4
 	Algorithm string `json:"alg,omitempty"`
@@ -133,7 +133,12 @@ type Client struct { //nolint:revive
 
 func NewClient(ctx context.Context, opts ...ClientOption) *Client {
 	d := &Client{
-		client:     http.DefaultClient,
+		client: &http.Client{
+			CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+				// do not redirect for avoiding open redirect from jku.
+				return http.ErrUseLastResponse
+			},
+		},
 		cacheStore: cache.NewStore(ctx, cache.WithDefaultTTL[*JWKSet](10*time.Minute)),
 	}
 
@@ -197,7 +202,7 @@ func GetJWKSet(ctx context.Context, jwksURI JWKSetURI) (*JWKSet, error) {
 	return Default.GetJWKSet(ctx, jwksURI)
 }
 
-var ErrKidNotFound = errors.New("jwk: kid not found in jwks_uri")
+var ErrKidNotFound = errors.New("jwk: kid not found in jwks")
 
 func (jwks *JWKSet) GetJSONWebKey(kid string) (*JSONWebKey, error) {
 	for _, jwk := range jwks.Keys {

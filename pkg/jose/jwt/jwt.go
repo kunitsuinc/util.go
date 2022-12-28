@@ -45,41 +45,36 @@ func New(encoder Encoder) (token string, err error) {
 	return encoder.Encode()
 }
 
-type Verifier func() error
+type Verifier func() (*jws.Header, *Claims, error)
 
-func (v Verifier) Verify() error {
+func (v Verifier) Verify() (*jws.Header, *Claims, error) {
 	return v()
 }
 
 func JWSVerifier(
 	token string,
 	key any,
-	headerVerifier func(header *jws.Header) error,
-	claimsVerifier func(header *Claims) error,
+	claimsVerifier func(claims *Claims) error,
 ) Verifier {
-	return func() error {
-		header, payload, err := jws.VerifySignature(token, key) //nolint:wrapcheck
+	return func() (*jws.Header, *Claims, error) {
+		header, payload, err := jws.VerifySignature(token, key)
 		if err != nil {
-			return err
+			return nil, nil, err //nolint:wrapcheck
 		}
-		if headerVerifier != nil {
-			if err := headerVerifier(header); err != nil {
-				return err
-			}
+		if claimsVerifier == nil {
+			return nil, nil, err
 		}
-		if claimsVerifier != nil {
-			claims := new(Claims)
-			if err := claims.Decode(payload); err != nil {
-				return err
-			}
-			if err := claimsVerifier(claims); err != nil {
-				return err
-			}
+		claims := new(Claims)
+		if err := claims.Decode(payload); err != nil {
+			return nil, nil, err
 		}
-		return nil
+		if err := claimsVerifier(claims); err != nil {
+			return nil, nil, err
+		}
+		return header, claims, nil
 	}
 }
 
-func Verify(verifier Verifier) error {
+func Verify(verifier Verifier) (*jws.Header, *Claims, error) {
 	return verifier.Verify()
 }
