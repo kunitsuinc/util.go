@@ -25,7 +25,7 @@ func TestNew(t *testing.T) {
 				"HS256",
 				jws.WithType("JWT"),
 			),
-			jwt.NewClaims(
+			jwt.NewClaimsSet(
 				jwt.WithSubject("1234567890"),
 				jwt.WithPrivateClaim("name", "John Doe"),
 				jwt.WithIssuedAt(time.Unix(1516239022, 0)),
@@ -40,7 +40,7 @@ func TestNew(t *testing.T) {
 
 	t.Run("failure(header=nil)", func(t *testing.T) {
 		t.Parallel()
-		_, err := jwt.New(jwt.JWSEncoder(nil, jwt.NewClaims(), testHMACKey))
+		_, err := jwt.New(jwt.JWSEncoder(nil, jwt.NewClaimsSet(), testHMACKey))
 		if actual, expect := err, jwt.ErrHeaderIsNil; !errors.Is(actual, expect) {
 			t.Fatalf("❌: actual != expect: %v != %v", actual, expect)
 		}
@@ -48,7 +48,7 @@ func TestNew(t *testing.T) {
 
 	t.Run("failure(header)", func(t *testing.T) {
 		t.Parallel()
-		_, err := jwt.New(jwt.JWSEncoder(jws.NewHeader("none", jws.WithPrivateHeaderParameter("invalid", func() {})), jwt.NewClaims(), testHMACKey))
+		_, err := jwt.New(jwt.JWSEncoder(jws.NewHeader("none", jws.WithPrivateHeaderParameter("invalid", func() {})), jwt.NewClaimsSet(), testHMACKey))
 		if actual, expect := err.Error(), "json: error calling MarshalJSON for type *jws.Header"; !strings.Contains(actual, expect) {
 			t.Fatalf("❌: actual != expect: %v != %v", actual, expect)
 		}
@@ -56,7 +56,7 @@ func TestNew(t *testing.T) {
 
 	t.Run("failure(payload)", func(t *testing.T) {
 		t.Parallel()
-		_, err := jwt.New(jwt.JWSEncoder(jws.NewHeader("HS256"), jwt.NewClaims(jwt.WithPrivateClaim("invalid", func() {})), testHMACKey))
+		_, err := jwt.New(jwt.JWSEncoder(jws.NewHeader("HS256"), jwt.NewClaimsSet(jwt.WithPrivateClaim("invalid", func() {})), testHMACKey))
 		if actual, expect := err.Error(), "json: error calling MarshalJSON for type *jwt.Claims"; !strings.Contains(actual, expect) {
 			t.Fatalf("❌: actual != expect: %v != %v", actual, expect)
 		}
@@ -64,7 +64,7 @@ func TestNew(t *testing.T) {
 
 	t.Run("failure(Sign)", func(t *testing.T) {
 		t.Parallel()
-		_, err := jwt.New(jwt.JWSEncoder(jws.NewHeader("HS256"), jwt.NewClaims(), "invalid key"))
+		_, err := jwt.New(jwt.JWSEncoder(jws.NewHeader("HS256"), jwt.NewClaimsSet(), "invalid key"))
 		if actual, expect := err, jws.ErrInvalidKeyReceived; !errors.Is(actual, expect) {
 			t.Fatalf("❌: actual != expect: %v != %v", actual, expect)
 		}
