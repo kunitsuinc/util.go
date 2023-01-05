@@ -5,12 +5,13 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/kunitsuinc/util.go/pkg/jose"
 	"github.com/kunitsuinc/util.go/pkg/jose/jwt"
 )
 
 var ErrHeaderIsNil = errors.New("jws: header is nil")
 
-func NewToken(header *Header, payload *jwt.Claims, key crypto.PrivateKey) (token string, err error) {
+func NewToken(header *jose.Header, payload *jwt.Claims, key crypto.PrivateKey) (token string, err error) {
 	if header == nil {
 		return "", ErrHeaderIsNil
 	}

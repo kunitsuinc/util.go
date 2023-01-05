@@ -1,4 +1,4 @@
-package jws //nolint:testpackage
+package jose //nolint:testpackage
 
 import (
 	"bytes"
@@ -88,7 +88,7 @@ func TestHeader_MarshalJSON(t *testing.T) {
 	t.Run("success()", func(t *testing.T) {
 		t.Parallel()
 		h := NewHeader(
-			jwa.HS256,
+			WithAlgorithm(jwa.HS256),
 			WithJwksURL("http://localhost/jwks"),
 			WithJSONWebKey(_jwk),
 			WithKeyID("testKeyID"),
@@ -112,7 +112,7 @@ func TestHeader_MarshalJSON(t *testing.T) {
 
 	t.Run("success(len(PrivateHeaderParameters)==0)", func(t *testing.T) {
 		t.Parallel()
-		b, err := json.Marshal(NewHeader(jwa.HS256))
+		b, err := json.Marshal(NewHeader(WithAlgorithm(jwa.HS256)))
 		if err != nil {
 			t.Fatalf("❌: json.Marshal: %v", err)
 		}

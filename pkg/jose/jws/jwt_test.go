@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kunitsuinc/util.go/pkg/jose"
+	"github.com/kunitsuinc/util.go/pkg/jose/jwa"
 	"github.com/kunitsuinc/util.go/pkg/jose/jws"
 	"github.com/kunitsuinc/util.go/pkg/jose/jwt"
 )
@@ -16,7 +18,7 @@ func TestJWT(t *testing.T) {
 
 	t.Run("success()", func(t *testing.T) {
 		t.Parallel()
-		token, err := jws.NewToken(jws.NewHeader("HS256"), jwt.NewClaims(), hmacKey)
+		token, err := jws.NewToken(jose.NewHeader(jose.WithAlgorithm(jwa.HS256)), jwt.NewClaims(), hmacKey)
 		if err != nil {
 			t.Fatalf("❌: jws.NewToken: %v", err)
 		}
@@ -36,7 +38,7 @@ func TestJWT(t *testing.T) {
 
 	t.Run("failure(header)", func(t *testing.T) {
 		t.Parallel()
-		_, err := jws.NewToken(jws.NewHeader("none", jws.WithPrivateHeaderParameter("invalid", func() {})), jwt.NewClaims(), hmacKey)
+		_, err := jws.NewToken(jose.NewHeader(jose.WithAlgorithm("none"), jose.WithPrivateHeaderParameter("invalid", func() {})), jwt.NewClaims(), hmacKey)
 		if actual, expect := err.Error(), "json: error calling MarshalJSON for type *jws.Header"; !strings.Contains(actual, expect) {
 			t.Fatalf("❌: actual != expect: %v != %v", actual, expect)
 		}
@@ -44,7 +46,7 @@ func TestJWT(t *testing.T) {
 
 	t.Run("failure(payload)", func(t *testing.T) {
 		t.Parallel()
-		_, err := jws.NewToken(jws.NewHeader("HS256"), jwt.NewClaims(jwt.WithPrivateClaim("invalid", func() {})), hmacKey)
+		_, err := jws.NewToken(jose.NewHeader(jose.WithAlgorithm(jwa.HS256)), jwt.NewClaims(jwt.WithPrivateClaim("invalid", func() {})), hmacKey)
 		if actual, expect := err.Error(), "json: error calling MarshalJSON for type *jwt.Claims"; !strings.Contains(actual, expect) {
 			t.Fatalf("❌: actual != expect: %v != %v", actual, expect)
 		}
@@ -52,7 +54,7 @@ func TestJWT(t *testing.T) {
 
 	t.Run("failure(Sign)", func(t *testing.T) {
 		t.Parallel()
-		_, err := jws.NewToken(jws.NewHeader("HS256"), jwt.NewClaims(), "invalid key")
+		_, err := jws.NewToken(jose.NewHeader(jose.WithAlgorithm(jwa.HS256)), jwt.NewClaims(), "invalid key")
 		if actual, expect := err, jws.ErrInvalidKeyReceived; !errors.Is(actual, expect) {
 			t.Fatalf("❌: actual != expect: %v != %v", actual, expect)
 		}

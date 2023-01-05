@@ -15,6 +15,7 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/kunitsuinc/util.go/pkg/jose"
 	"github.com/kunitsuinc/util.go/pkg/jose/jwa"
 )
 
@@ -26,20 +27,20 @@ var (
 	ErrInvalidAlgorithm            = errors.New(`jws: invalid algorithm`)
 )
 
-func VerifySignature(token string, key any) error { //nolint:funlen,cyclop
-	parts := strings.Split(token, ".")
+func VerifySignature(jwt string, key any) error { //nolint:funlen,cyclop
+	parts := strings.Split(jwt, ".")
 	if len(parts) != 3 {
 		return ErrInvalidTokenReceived
 	}
 
 	headerJSON, err := base64.RawURLEncoding.DecodeString(parts[0])
 	if err != nil {
-		return fmt.Errorf("invalid header: %w", err)
+		return fmt.Errorf("invalid jose header: %w", err)
 	}
 
-	header := new(Header)
+	header := new(jose.Header)
 	if err := json.Unmarshal(headerJSON, header); err != nil {
-		return fmt.Errorf("invalid header: %w", err)
+		return fmt.Errorf("invalid jose header: %w", err)
 	}
 
 	signingInput := parts[0] + "." + parts[1]
