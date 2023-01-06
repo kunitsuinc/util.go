@@ -102,99 +102,107 @@ type Header struct {
 
 type PrivateHeaderParameters map[string]any
 
-func NewHeader(opts ...HeaderOption) *Header {
+// NewHeader
+//
+// Example:
+//
+//	header := jose.NewHeader(
+//		jose.WithAlgorithm(jwa.HS256),
+//		jose.WithType("JWT"),
+//	)
+func NewHeader(parameters ...HeaderParameter) *Header {
 	h := &Header{
 		PrivateHeaderParameters: make(PrivateHeaderParameters),
 	}
 
-	for _, opt := range opts {
-		opt(h)
+	for _, parameter := range parameters {
+		parameter(h)
 	}
 
 	return h
 }
 
-type HeaderOption func(h *Header)
+type HeaderParameter func(h *Header)
 
-func WithAlgorithm(alg string) HeaderOption {
+func WithAlgorithm(alg string) HeaderParameter {
 	return func(h *Header) {
 		h.Algorithm = alg
 	}
 }
 
-func WithEncryptionAlgorithm(enc string) HeaderOption {
+func WithEncryptionAlgorithm(enc string) HeaderParameter {
 	return func(h *Header) {
 		h.EncryptionAlgorithm = enc
 	}
 }
 
-func WithCompressionAlgorithm(zip string) HeaderOption {
+func WithCompressionAlgorithm(zip string) HeaderParameter {
 	return func(h *Header) {
 		h.CompressionAlgorithm = zip
 	}
 }
 
-func WithJwksURL(jku string) HeaderOption {
+func WithJwksURL(jku string) HeaderParameter {
 	return func(h *Header) {
 		h.JwksURL = jku
 	}
 }
 
-func WithJSONWebKey(jwk *jwk.JSONWebKey) HeaderOption {
+func WithJSONWebKey(jwk *jwk.JSONWebKey) HeaderParameter {
 	return func(h *Header) {
 		h.JSONWebKey = jwk
 	}
 }
 
-func WithKeyID(kid string) HeaderOption {
+func WithKeyID(kid string) HeaderParameter {
 	return func(h *Header) {
 		h.KeyID = kid
 	}
 }
 
-func WithX509URL(x5u string) HeaderOption {
+func WithX509URL(x5u string) HeaderParameter {
 	return func(h *Header) {
 		h.X509URL = x5u
 	}
 }
 
-func WithX509CertificateChain(x5c []string) HeaderOption {
+func WithX509CertificateChain(x5c []string) HeaderParameter {
 	return func(h *Header) {
 		h.X509CertificateChain = x5c
 	}
 }
 
-func WithX509CertificateSHA1Thumbprint(x5t string) HeaderOption {
+func WithX509CertificateSHA1Thumbprint(x5t string) HeaderParameter {
 	return func(h *Header) {
 		h.X509CertificateSHA1Thumbprint = x5t
 	}
 }
 
-func WithX509CertificateSHA256Thumbprint(x5tS256 string) HeaderOption {
+func WithX509CertificateSHA256Thumbprint(x5tS256 string) HeaderParameter {
 	return func(h *Header) {
 		h.X509CertificateSHA256Thumbprint = x5tS256
 	}
 }
 
-func WithType(typ string) HeaderOption {
+func WithType(typ string) HeaderParameter {
 	return func(h *Header) {
 		h.Type = typ
 	}
 }
 
-func WithContentType(cty string) HeaderOption {
+func WithContentType(cty string) HeaderParameter {
 	return func(h *Header) {
 		h.ContentType = cty
 	}
 }
 
-func WithCritical(crit []string) HeaderOption {
+func WithCritical(crit []string) HeaderParameter {
 	return func(h *Header) {
 		h.Critical = crit
 	}
 }
 
-func WithPrivateHeaderParameter(name string, value any) HeaderOption {
+func WithPrivateHeaderParameter(name string, value any) HeaderParameter {
 	return func(h *Header) {
 		h.PrivateHeaderParameters[name] = value
 	}

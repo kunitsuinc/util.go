@@ -11,7 +11,7 @@ import (
 
 var ErrHeaderIsNil = errors.New("jws: header is nil")
 
-func NewToken(header *jose.Header, payload *jwt.Claims, key crypto.PrivateKey) (token string, err error) {
+func NewToken(header *jose.Header, payload *jwt.ClaimsSet, key crypto.PrivateKey) (token string, err error) {
 	if header == nil {
 		return "", ErrHeaderIsNil
 	}

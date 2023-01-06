@@ -13,88 +13,111 @@ import (
 
 //   - ref. JOSE Header - JSON Web Token (JWT) https://www.rfc-editor.org/rfc/rfc7519#section-5
 
-// Claims
-//   - ref. RFC 7519 - JSON Web Token (JWT) https://www.rfc-editor.org/rfc/rfc7519#section-4.1
-type Claims struct {
-	// ref. https://www.rfc-editor.org/rfc/rfc7519#section-4.1.1
+// ClaimsSet
+//
+//   - ref. JWT Claims - JSON Web Token (JWT) https://www.rfc-editor.org/rfc/rfc7519#section-4
+type ClaimsSet struct {
+	// Issuer
+	//
+	//   - ref. https://www.rfc-editor.org/rfc/rfc7519#section-4.1.1
 	Issuer string `json:"iss,omitempty"`
-	// ref. https://www.rfc-editor.org/rfc/rfc7519#section-4.1.2
+
+	// Subject
+	//
+	//   - ref. https://www.rfc-editor.org/rfc/rfc7519#section-4.1.2
 	Subject string `json:"sub,omitempty"`
-	// ref. https://www.rfc-editor.org/rfc/rfc7519#section-4.1.3
+
+	// Audience
+	//
+	//   - ref. https://www.rfc-editor.org/rfc/rfc7519#section-4.1.3
 	Audience string `json:"aud,omitempty"`
-	// ref. https://www.rfc-editor.org/rfc/rfc7519#section-4.1.4
+
+	// ExpirationTime
+	//
+	//   - ref. https://www.rfc-editor.org/rfc/rfc7519#section-4.1.4
 	ExpirationTime int64 `json:"exp,omitempty"`
-	// ref. https://www.rfc-editor.org/rfc/rfc7519#section-4.1.5
+
+	// NotBefore
+	//
+	//   - ref. https://www.rfc-editor.org/rfc/rfc7519#section-4.1.5
 	NotBefore int64 `json:"nbf,omitempty"`
-	// ref. https://www.rfc-editor.org/rfc/rfc7519#section-4.1.6
+
+	// IssuedAt
+	//
+	//   - ref. https://www.rfc-editor.org/rfc/rfc7519#section-4.1.6
 	IssuedAt int64 `json:"iat,omitempty"`
-	// ref. https://www.rfc-editor.org/rfc/rfc7519#section-4.1.7
+
+	// JWTID
+	//
+	//   - ref. https://www.rfc-editor.org/rfc/rfc7519#section-4.1.7
 	JWTID string `json:"jti,omitempty"`
 
-	// ref. https://www.rfc-editor.org/rfc/rfc7519#section-4.3
+	// PrivateClaims
+	//
+	//   - ref. https://www.rfc-editor.org/rfc/rfc7519#section-4.3
 	PrivateClaims PrivateClaims `json:"-"`
 }
 
 type PrivateClaims map[string]any
 
-type ClaimsOption func(c *Claims)
+type Claims func(c *ClaimsSet)
 
-func WithIssuer(iss string) ClaimsOption {
-	return func(c *Claims) {
+func WithIssuer(iss string) Claims {
+	return func(c *ClaimsSet) {
 		c.Issuer = iss
 	}
 }
 
-func WithSubject(sub string) ClaimsOption {
-	return func(c *Claims) {
+func WithSubject(sub string) Claims {
+	return func(c *ClaimsSet) {
 		c.Subject = sub
 	}
 }
 
-func WithAudience(aud string) ClaimsOption {
-	return func(c *Claims) {
+func WithAudience(aud string) Claims {
+	return func(c *ClaimsSet) {
 		c.Audience = aud
 	}
 }
 
-func WithExpirationTime(exp time.Time) ClaimsOption {
-	return func(c *Claims) {
+func WithExpirationTime(exp time.Time) Claims {
+	return func(c *ClaimsSet) {
 		c.ExpirationTime = exp.Unix()
 	}
 }
 
-func WithNotBefore(nbf time.Time) ClaimsOption {
-	return func(c *Claims) {
+func WithNotBefore(nbf time.Time) Claims {
+	return func(c *ClaimsSet) {
 		c.NotBefore = nbf.Unix()
 	}
 }
 
-func WithIssuedAt(iat time.Time) ClaimsOption {
-	return func(c *Claims) {
+func WithIssuedAt(iat time.Time) Claims {
+	return func(c *ClaimsSet) {
 		c.IssuedAt = iat.Unix()
 	}
 }
 
-func WithJWTID(jti string) ClaimsOption {
-	return func(c *Claims) {
+func WithJWTID(jti string) Claims {
+	return func(c *ClaimsSet) {
 		c.JWTID = jti
 	}
 }
 
-func WithPrivateClaim(name string, value any) ClaimsOption {
-	return func(c *Claims) {
+func WithPrivateClaim(name string, value any) Claims {
+	return func(c *ClaimsSet) {
 		c.PrivateClaims[name] = value
 	}
 }
 
-func NewClaims(opts ...ClaimsOption) *Claims {
-	c := &Claims{
+func NewClaimsSet(claims ...Claims) *ClaimsSet {
+	c := &ClaimsSet{
 		IssuedAt:      time.Now().Unix(),
 		PrivateClaims: make(PrivateClaims),
 	}
 
-	for _, opt := range opts {
-		opt(c)
+	for _, claim := range claims {
+		claim(c)
 	}
 
 	return c
@@ -102,14 +125,14 @@ func NewClaims(opts ...ClaimsOption) *Claims {
 
 var ErrInvalidJSON = errors.New("jwt: invalid JSON")
 
-func (c *Claims) UnmarshalJSON(data []byte) (err error) {
+func (c *ClaimsSet) UnmarshalJSON(data []byte) (err error) {
 	// avoid recursion
-	type _Claims Claims
+	type _Claims ClaimsSet
 	_claims := _Claims{}
 
 	err = json.Unmarshal(data, &_claims)
 	if err == nil {
-		*c = Claims(_claims)
+		*c = ClaimsSet(_claims)
 	}
 
 	privateClaims := make(map[string]any)
@@ -127,22 +150,22 @@ func (c *Claims) UnmarshalJSON(data []byte) (err error) {
 	return err //nolint:wrapcheck
 }
 
-func (c *Claims) MarshalJSON() (data []byte, err error) {
+func (c *ClaimsSet) MarshalJSON() (data []byte, err error) {
 	return c.marshalJSON(json.Marshal, bytes.HasSuffix, bytes.HasPrefix)
 }
 
-func (c *Claims) marshalJSON(
+func (c *ClaimsSet) marshalJSON(
 	json_Marshal func(v any) ([]byte, error), //nolint:revive,stylecheck
 	bytes_HasSuffix func(s []byte, suffix []byte) bool, //nolint:revive,stylecheck
 	bytes_HasPrefix func(s []byte, prefix []byte) bool, //nolint:revive,stylecheck
 ) (data []byte, err error) {
 	// avoid recursion
-	type _Claims Claims
-	_claims := _Claims(*c)
+	type _ClaimsSet ClaimsSet
+	_claimsSet := _ClaimsSet(*c)
 
-	b, err := json_Marshal(&_claims)
+	b, err := json_Marshal(&_claimsSet)
 	if err != nil {
-		return nil, fmt.Errorf("invalid claims: %+v: %w", _claims, err)
+		return nil, fmt.Errorf("invalid claims set: %+v: %w", _claimsSet, err)
 	}
 
 	if len(c.PrivateClaims) == 0 {
@@ -166,7 +189,7 @@ func (c *Claims) marshalJSON(
 	return append(b, privateClaims[1:]...), nil
 }
 
-func (c *Claims) Encode() (encoded string, err error) {
+func (c *ClaimsSet) Encode() (encoded string, err error) {
 	b, err := json.Marshal(c)
 	if err != nil {
 		return "", fmt.Errorf("json.Marshal: %w", err)
@@ -174,7 +197,7 @@ func (c *Claims) Encode() (encoded string, err error) {
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
-func (c *Claims) Decode(encoded string) error {
+func (c *ClaimsSet) Decode(encoded string) error {
 	decoded, err := base64.RawURLEncoding.DecodeString(encoded)
 	if err != nil {
 		return fmt.Errorf("base64.RawURLEncoding.DecodeString: %w", err)
