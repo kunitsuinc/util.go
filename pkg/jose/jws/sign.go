@@ -15,7 +15,7 @@ import (
 	"github.com/kunitsuinc/util.go/pkg/jose/jwa"
 )
 
-func Sign(alg jwa.Algorithm, signingInput string, key any) (signature string, err error) { //nolint:funlen,cyclop
+func Sign(alg jwa.AlgorithmJWS, signingInput string, key any) (signature string, err error) { //nolint:funlen,cyclop
 	// "alg" (Algorithm) Header Parameter Values for JWS - JSON Web Algorithms (JWA) ref. https://www.rfc-editor.org/rfc/rfc7518#section-3.1
 	switch alg {
 	case jwa.HS256:

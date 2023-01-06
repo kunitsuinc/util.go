@@ -1,6 +1,20 @@
 package jwa
 
+import (
+	"crypto/sha256"
+	"crypto/sha512"
+	"errors"
+	"sync"
+)
+
+var (
+	ErrInvalidKeyReceived      = errors.New(`jws: invalid key received`)
+	ErrFailedToVerifySignature = errors.New(`jws: failed to verify signature`)
+)
+
 // Algorithm
+//
+//   - ref. https://www.rfc-editor.org/rfc/rfc7518#section-3.1
 //
 // 3.1.  "alg" (Algorithm) Header Parameter Values for JWS
 //
@@ -42,8 +56,6 @@ package jwa
 //	signature and MAC "alg" (algorithm) values defined in this
 //	specification with the equivalent identifiers used by other standards
 //	and software packages.
-//
-// - ref. https://www.rfc-editor.org/rfc/rfc7518#section-3.1
 type Algorithm = string
 
 const (
@@ -61,3 +73,55 @@ const (
 	PS512 Algorithm = "PS512"
 	None  Algorithm = "none"
 )
+
+type JWSAlgorithm interface {
+	Sign(key any, signingInput string) (signature string, err error)
+	Verify(key any, signingInput string, signature string) (err error)
+}
+
+//nolint:gochecknoglobals
+var (
+	jwsAlgorithm = map[string]JWSAlgorithm{
+		HS256: _HS256{},
+		HS384: _HS384{},
+		HS512: _HS512{},
+	}
+	jwsAlgorithmMu sync.Mutex
+)
+
+func Register(alg string, j JWSAlgorithm) {
+	jwsAlgorithmMu.Lock()
+	defer jwsAlgorithmMu.Unlock()
+	jwsAlgorithm[alg] = j
+}
+
+//nolint:revive,stylecheck
+type (
+	_HS256 struct{}
+	_HS384 struct{}
+	_HS512 struct{}
+)
+
+func (_HS256) Sign(key any, signingInput string) (signature string, err error) {
+	return signHS(key, signingInput, sha256.New)
+}
+
+func (_HS256) Verify(key any, signingInput string, signature string) (err error) {
+	return verifyHS(key, signingInput, signature, sha256.New)
+}
+
+func (_HS384) Sign(key any, signingInput string) (signature string, err error) {
+	return signHS(key, signingInput, sha512.New384)
+}
+
+func (_HS384) Verify(key any, signingInput string, signature string) (err error) {
+	return verifyHS(key, signingInput, signature, sha512.New384)
+}
+
+func (_HS512) Sign(key any, signingInput string) (signature string, err error) {
+	return signHS(key, signingInput, sha512.New)
+}
+
+func (_HS512) Verify(key any, signingInput string, signature string) (err error) {
+	return verifyHS(key, signingInput, signature, sha512.New)
+}
