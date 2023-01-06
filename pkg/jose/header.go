@@ -102,26 +102,6 @@ type Header struct {
 
 type PrivateHeaderParameters map[string]any
 
-// NewHeader
-//
-// Example:
-//
-//	header := jose.NewHeader(
-//		jose.WithAlgorithm(jwa.HS256),
-//		jose.WithType("JWT"),
-//	)
-func NewHeader(parameters ...HeaderParameter) *Header {
-	h := &Header{
-		PrivateHeaderParameters: make(PrivateHeaderParameters),
-	}
-
-	for _, parameter := range parameters {
-		parameter(h)
-	}
-
-	return h
-}
-
 type HeaderParameter func(h *Header)
 
 func WithAlgorithm(alg string) HeaderParameter {
@@ -206,6 +186,26 @@ func WithPrivateHeaderParameter(name string, value any) HeaderParameter {
 	return func(h *Header) {
 		h.PrivateHeaderParameters[name] = value
 	}
+}
+
+// NewHeader
+//
+// Example:
+//
+//	header := jose.NewHeader(
+//		jose.WithAlgorithm(jwa.HS256),
+//		jose.WithType("JWT"),
+//	)
+func NewHeader(parameters ...HeaderParameter) *Header {
+	h := &Header{
+		PrivateHeaderParameters: make(PrivateHeaderParameters),
+	}
+
+	for _, parameter := range parameters {
+		parameter(h)
+	}
+
+	return h
 }
 
 var ErrInvalidJSON = errors.New("jws: invalid JSON")

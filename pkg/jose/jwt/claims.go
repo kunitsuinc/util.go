@@ -110,6 +110,14 @@ func WithPrivateClaim(name string, value any) Claims {
 	}
 }
 
+// NewClaimsSet
+//
+// Example:
+//
+//	header := jwt.NewClaimsSet(
+//		jwt.WithIssuer("https://myapp.com"),
+//		jwt.WithSubject("userID"),
+//	)
 func NewClaimsSet(claims ...Claims) *ClaimsSet {
 	c := &ClaimsSet{
 		IssuedAt:      time.Now().Unix(),
