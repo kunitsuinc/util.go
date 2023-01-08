@@ -208,7 +208,7 @@ func NewHeader(parameters ...HeaderParameter) *Header {
 	return h
 }
 
-var ErrInvalidJSON = errors.New("jws: invalid JSON")
+var ErrInvalidJSON = errors.New("jose: invalid JSON")
 
 func (h *Header) UnmarshalJSON(data []byte) (err error) {
 	// avoid recursion

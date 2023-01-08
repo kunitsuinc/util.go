@@ -1,35 +1,26 @@
 package jws
 
-import (
-	"crypto"
-	"errors"
-	"fmt"
+// var ErrHeaderIsNil = errors.New("jws: header is nil")
 
-	"github.com/kunitsuinc/util.go/pkg/jose"
-	"github.com/kunitsuinc/util.go/pkg/jose/jwt"
-)
+// func NewToken(header *jose.Header, payload *jwt.ClaimsSet, key crypto.PrivateKey) (token string, err error) {
+// 	if header == nil {
+// 		return "", ErrHeaderIsNil
+// 	}
 
-var ErrHeaderIsNil = errors.New("jws: header is nil")
+// 	headerEncoded, err := header.Encode()
+// 	if err != nil {
+// 		return "", fmt.Errorf("(*jws.Header).Encode: %w", err)
+// 	}
 
-func NewToken(header *jose.Header, payload *jwt.ClaimsSet, key crypto.PrivateKey) (token string, err error) {
-	if header == nil {
-		return "", ErrHeaderIsNil
-	}
+// 	payloadEncoded, err := payload.Encode()
+// 	if err != nil {
+// 		return "", fmt.Errorf("(*jwt.Claims).Encode: %w", err)
+// 	}
 
-	headerEncoded, err := header.Encode()
-	if err != nil {
-		return "", fmt.Errorf("(*jws.Header).Encode: %w", err)
-	}
+// 	signature, err := Sign(header.Algorithm, key, headerEncoded+"."+payloadEncoded)
+// 	if err != nil {
+// 		return "", fmt.Errorf("jws.Sign: %w", err)
+// 	}
 
-	payloadEncoded, err := payload.Encode()
-	if err != nil {
-		return "", fmt.Errorf("(*jwt.Claims).Encode: %w", err)
-	}
-
-	signature, err := Sign(header.Algorithm, headerEncoded+"."+payloadEncoded, key)
-	if err != nil {
-		return "", fmt.Errorf("jws.Sign: %w", err)
-	}
-
-	return headerEncoded + "." + payloadEncoded + "." + signature, nil
-}
+// 	return headerEncoded + "." + payloadEncoded + "." + signature, nil
+// }

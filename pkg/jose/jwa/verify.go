@@ -5,28 +5,37 @@ import (
 	"crypto/ecdsa"
 	"crypto/hmac"
 	"crypto/rsa"
+	"encoding/base64"
 	"fmt"
 	"hash"
 	"math/big"
 )
 
-func verifyHS(key any, signingInput string, signature string, hashNewFunc func() hash.Hash) error {
+func verifyHS(key any, signingInput string, signatureEncoded string, hashNewFunc func() hash.Hash) error {
 	keyBytes, ok := key.([]byte)
 	if !ok {
 		return ErrInvalidKeyReceived
 	}
+	signature, err := base64.RawURLEncoding.DecodeString(signatureEncoded)
+	if err != nil {
+		return fmt.Errorf("base64.RawURLEncoding.DecodeString: %w", err)
+	}
 	h := hmac.New(hashNewFunc, keyBytes)
 	h.Write([]byte(signingInput))
-	if !hmac.Equal([]byte(signature), h.Sum(nil)) {
+	if !hmac.Equal(signature, h.Sum(nil)) {
 		return fmt.Errorf("hmac.Equal: %w", ErrFailedToVerifySignature)
 	}
 	return nil
 }
 
-func verifyRS(signature []byte, signingInput string, key crypto.PublicKey, hashNewFunc func() hash.Hash, cryptoHash crypto.Hash) error {
+func verifyRS(key crypto.PublicKey, signingInput string, signatureEncoded string, hashNewFunc func() hash.Hash, cryptoHash crypto.Hash) error {
 	pub, ok := key.(*rsa.PublicKey)
 	if !ok {
 		return ErrInvalidKeyReceived
+	}
+	signature, err := base64.RawURLEncoding.DecodeString(signatureEncoded)
+	if err != nil {
+		return fmt.Errorf("base64.RawURLEncoding.DecodeString: %w", err)
 	}
 	h := hashNewFunc()
 	h.Write([]byte(signingInput))
@@ -36,13 +45,17 @@ func verifyRS(signature []byte, signingInput string, key crypto.PublicKey, hashN
 	return nil
 }
 
-func verifyES(signature []byte, signingInput string, key crypto.PublicKey, cryptoHash crypto.Hash, keySize int) error {
+func verifyES(key crypto.PublicKey, signingInput string, signatureEncoded string, cryptoHash crypto.Hash, keySize int) error {
 	pub, ok := key.(*ecdsa.PublicKey)
 	if !ok {
 		return ErrInvalidKeyReceived
 	}
+	signature, err := base64.RawURLEncoding.DecodeString(signatureEncoded)
+	if err != nil {
+		return fmt.Errorf("base64.RawURLEncoding.DecodeString: %w", err)
+	}
 	if len(signature) != keySize*2 {
-		return fmt.Errorf("len(signature)=%d != keySize*2=%d: %w", len(signature), keySize*2, ErrInvalidKeyReceived)
+		return fmt.Errorf("len(signature)=%d != keySize*2=%d: %w", len(signature), keySize*2, ErrFailedToVerifySignature)
 	}
 	h := cryptoHash.New()
 	h.Write([]byte(signingInput))
@@ -54,10 +67,14 @@ func verifyES(signature []byte, signingInput string, key crypto.PublicKey, crypt
 	return nil
 }
 
-func verifyPS(signature []byte, signingInput string, key crypto.PublicKey, hashNewFunc func() hash.Hash, cryptoHash crypto.Hash, opts *rsa.PSSOptions) error {
+func verifyPS(key crypto.PublicKey, signingInput string, signatureEncoded string, hashNewFunc func() hash.Hash, cryptoHash crypto.Hash, opts *rsa.PSSOptions) error {
 	pub, ok := key.(*rsa.PublicKey)
 	if !ok {
 		return ErrInvalidKeyReceived
+	}
+	signature, err := base64.RawURLEncoding.DecodeString(signatureEncoded)
+	if err != nil {
+		return fmt.Errorf("base64.RawURLEncoding.DecodeString: %w", err)
 	}
 	h := hashNewFunc()
 	h.Write([]byte(signingInput))

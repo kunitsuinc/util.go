@@ -11,7 +11,7 @@ import (
 	"hash"
 )
 
-func signHS(key any, signingInput string, hashNewFunc func() hash.Hash) (signature string, err error) {
+func signHS(key any, signingInput string, hashNewFunc func() hash.Hash) (signatureEncoded string, err error) {
 	keyBytes, ok := key.([]byte)
 	if !ok {
 		return "", ErrInvalidKeyReceived
@@ -21,7 +21,7 @@ func signHS(key any, signingInput string, hashNewFunc func() hash.Hash) (signatu
 	return base64.RawURLEncoding.EncodeToString(h.Sum(nil)), nil
 }
 
-func signRS(key crypto.PrivateKey, signingInput string, hashNewFunc func() hash.Hash, cryptoHash crypto.Hash) (signature string, err error) {
+func signRS(key crypto.PrivateKey, signingInput string, hashNewFunc func() hash.Hash, cryptoHash crypto.Hash) (signatureEncoded string, err error) {
 	priv, ok := key.(*rsa.PrivateKey)
 	if !ok {
 		return "", ErrInvalidKeyReceived
@@ -36,7 +36,7 @@ func signRS(key crypto.PrivateKey, signingInput string, hashNewFunc func() hash.
 	return base64.RawURLEncoding.EncodeToString(rawSignature), nil
 }
 
-func signES(key crypto.PrivateKey, signingInput string, cryptoHash crypto.Hash, keySize int) (signature string, err error) {
+func signES(key crypto.PrivateKey, signingInput string, cryptoHash crypto.Hash, keySize int) (signatureEncoded string, err error) {
 	priv, ok := key.(*ecdsa.PrivateKey)
 	if !ok {
 		return "", ErrInvalidKeyReceived
@@ -64,7 +64,7 @@ func signES(key crypto.PrivateKey, signingInput string, cryptoHash crypto.Hash, 
 	return base64.RawURLEncoding.EncodeToString(rawSignature), nil
 }
 
-func signPS(key crypto.PrivateKey, signingInput string, cryptoHash crypto.Hash) (signature string, err error) {
+func signPS(key crypto.PrivateKey, signingInput string, cryptoHash crypto.Hash) (signatureEncoded string, err error) {
 	priv, ok := key.(*rsa.PrivateKey)
 	if !ok {
 		return "", ErrInvalidKeyReceived

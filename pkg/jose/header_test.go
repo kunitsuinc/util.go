@@ -42,7 +42,7 @@ var (
 		"MIIC5zCCAlACAQEwDQYJKoZIhvcNAQEFBQAwgbsxJDAiBgNVBAcTG1ZhbGlDZXJ0IFZhbGlkYXRpb24gTmV0d29yazEXMBUGA1UEChMOVmFsaUNlcnQsIEluYy4xNTAzBgNVBAsTLFZhbGlDZXJ0IENsYXNzIDIgUG9saWN5IFZhbGlkYXRpb24gQXV0aG9yaXR5MSEwHwYDVQQDExhodHRwOi8vd3d3LnZhbGljZXJ0LmNvbS8xIDAeBgkqhkiG9w0BCQEWEWluZm9AdmFsaWNlcnQuY29tMB4XDTk5MDYyNjAwMTk1NFoXDTE5MDYyNjAwMTk1NFowgbsxJDAiBgNVBAcTG1ZhbGlDZXJ0IFZhbGlkYXRpb24gTmV0d29yazEXMBUGA1UEChMOVmFsaUNlcnQsIEluYy4xNTAzBgNVBAsTLFZhbGlDZXJ0IENsYXNzIDIgUG9saWN5IFZhbGlkYXRpb24gQXV0aG9yaXR5MSEwHwYDVQQDExhodHRwOi8vd3d3LnZhbGljZXJ0LmNvbS8xIDAeBgkqhkiG9w0BCQEWEWluZm9AdmFsaWNlcnQuY29tMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDOOnHK5avIWZJV16vYdA757tn2VUdZZUcOBVXc65g2PFxTXdMwzzjsvUGJ7SVCCSRrCl6zfN1SLUzm1NZ9WlmpZdRJEy0kTRxQb7XBhVQ7/nHk01xC+YDgkRoKWzk2Z/M/VXwbP7RfZHM047QSv4dk+NoS/zcnwbNDu+97bi5p9wIDAQABMA0GCSqGSIb3DQEBBQUAA4GBADt/UG9vUJSZSWI4OB9L+KXIPqeCgfYrx+jFzug6EILLGACOTb2oWH+heQC1u+mNr0HZDzTuIYEZoDJJKPTEjlbVUjP9UNV+mWwD5MlM/Mtsq2azSiGM5bUMMj4QssxsodyamEwCW/POuZ6lcg5Ktz885hZo+L7tdEy8W9ViH0Pd",
 	}
 	testHeader = &Header{
-		Algorithm:                       jwa.HS256,
+		Algorithm:                       string(jwa.HS256),
 		JwksURL:                         "http://localhost/jwks",
 		JSONWebKey:                      _jwk,
 		KeyID:                           "testKeyID",
@@ -88,7 +88,7 @@ func TestHeader_MarshalJSON(t *testing.T) {
 	t.Run("success()", func(t *testing.T) {
 		t.Parallel()
 		h := NewHeader(
-			WithAlgorithm(jwa.HS256),
+			WithAlgorithm(string(jwa.HS256)),
 			WithJwksURL("http://localhost/jwks"),
 			WithJSONWebKey(_jwk),
 			WithKeyID("testKeyID"),
@@ -112,7 +112,7 @@ func TestHeader_MarshalJSON(t *testing.T) {
 
 	t.Run("success(len(PrivateHeaderParameters)==0)", func(t *testing.T) {
 		t.Parallel()
-		b, err := json.Marshal(NewHeader(WithAlgorithm(jwa.HS256)))
+		b, err := json.Marshal(NewHeader(WithAlgorithm(string(jwa.HS256))))
 		if err != nil {
 			t.Fatalf("❌: json.Marshal: %v", err)
 		}
