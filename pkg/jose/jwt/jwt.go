@@ -37,7 +37,7 @@ func New(key any, header *jose.Header, claimsSet *ClaimsSet) (token string, err 
 
 type verifyOption struct {
 	aud                     string
-	verifyPrivateClaimsFunc func(PrivateClaims) error
+	verifyPrivateClaimsFunc func(privateClaims PrivateClaims) error
 }
 
 type VerifyOption func(*verifyOption)
@@ -48,7 +48,7 @@ func VerifyAudience(aud string) VerifyOption {
 	}
 }
 
-func VerifyPrivateClaims(verifyPrivateClaimsFunc func(PrivateClaims) error) VerifyOption {
+func VerifyPrivateClaims(verifyPrivateClaimsFunc func(privateClaims PrivateClaims) error) VerifyOption {
 	return func(vo *verifyOption) {
 		vo.verifyPrivateClaimsFunc = verifyPrivateClaimsFunc
 	}
@@ -67,7 +67,7 @@ func Verify(keyOption jws.KeyOption, jwt string, opts ...VerifyOption) (header *
 
 	cs := new(ClaimsSet)
 	if err := cs.Decode(payloadEncoded); err != nil {
-		return nil, nil, fmt.Errorf("*jwt.ClaimsSet).Decode: %w", err)
+		return nil, nil, fmt.Errorf("(*jwt.ClaimsSet).Decode: %w", err)
 	}
 
 	if err := verifyClaimsSet(cs, vo, time.Now()); err != nil {

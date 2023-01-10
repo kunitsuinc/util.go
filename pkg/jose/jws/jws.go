@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/kunitsuinc/util.go/pkg/jose"
 	"github.com/kunitsuinc/util.go/pkg/jose/jwa"
@@ -17,19 +16,6 @@ var (
 	ErrInvalidTokenReceived = errors.New(`jws: invalid token received, token must have 3 parts`)
 	ErrInvalidKeyOption     = errors.New(`jws: invalid key option`)
 )
-
-func Sign(alg string, key any, signingInput string) (signatureEncoded string, err error) {
-	return jwa.JWS(alg).Sign(key, signingInput) //nolint:wrapcheck
-}
-
-func Parse(jwt string) (headerEncoded, payloadEncoded, signatureEncoded string, err error) {
-	parts := strings.Split(jwt, ".")
-	if len(parts) != 3 {
-		return "", "", "", ErrInvalidTokenReceived
-	}
-
-	return parts[0], parts[1], parts[2], nil
-}
 
 type KeyOption struct {
 	key           any

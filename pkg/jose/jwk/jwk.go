@@ -22,8 +22,9 @@ import (
 )
 
 var (
-	ErrCurveNotSupported    = errors.New("curve not supported")
-	ErrKeyIsNotForAlgorithm = errors.New("key is not for algorithm")
+	ErrCurveNotSupported      = errors.New("jwk: specified curve parameter is not supported")
+	ErrKeyIsNotForAlgorithm   = errors.New("jwk: key is not for algorithm")
+	ErrResponseIsNotCacheable = errors.New("jwk: response is not cacheable")
 )
 
 // ref. JSON Web Key (JWK) https://www.rfc-editor.org/rfc/rfc7517
@@ -435,8 +436,6 @@ func WithCacheStore(store *cache.Store[*JWKSet]) ClientOption {
 		d.cacheStore = store
 	}
 }
-
-var ErrResponseIsNotCacheable = errors.New("jwk: response is not cacheable")
 
 func (d *Client) GetJWKSet(ctx context.Context, jwksURL JWKSetURL) (*JWKSet, error) {
 	return d.cacheStore.GetOrSet(jwksURL, func() (*JWKSet, error) { //nolint:wrapcheck

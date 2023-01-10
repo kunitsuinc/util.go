@@ -129,10 +129,10 @@ var (
 )
 
 var (
-	ErrInvalidKeyReceived          = errors.New(`invalid key received`)
-	ErrFailedToVerifySignature     = errors.New(`failed to verify signature`)
-	ErrAlgorithmNoneIsNotSupported = errors.New(`algorithm "none" is not supported`)
-	ErrNotImplemented              = errors.New(`not implemented`)
+	ErrInvalidKeyReceived          = errors.New(`jwa: invalid key received`)
+	ErrFailedToVerifySignature     = errors.New(`jwa: failed to verify signature`)
+	ErrAlgorithmNoneIsNotSupported = errors.New(`jwa: algorithm "none" is not supported`)
+	ErrNotImplemented              = errors.New(`jwa: not implemented`)
 )
 
 func JWS(alg string) JWSAlgorithm { //nolint:cyclop,ireturn
