@@ -21,7 +21,7 @@ var (
 	testClaims = &ClaimsSet{
 		Issuer:         "http://localhost/iss",
 		Subject:        "userID",
-		Audience:       "http://localhost/aud",
+		Audience:       "http://localhost/test/aud",
 		ExpirationTime: 1671745431,
 		NotBefore:      1671745431,
 		IssuedAt:       1671745431,
@@ -30,8 +30,8 @@ var (
 			testPrivateClaim1Key: testPrivateClaim1Value,
 		},
 	}
-	testClaimsString  = fmt.Sprintf(`{"iss":"http://localhost/iss","sub":"userID","aud":"http://localhost/aud","exp":1671745431,"nbf":1671745431,"iat":1671745431,"jti":"jwtID","%s":"%s"}`, testPrivateClaim1Key, testPrivateClaim1Value)
-	testClaimsEncoded = "eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0L2lzcyIsInN1YiI6InVzZXJJRCIsImF1ZCI6Imh0dHA6Ly9sb2NhbGhvc3QvYXVkIiwiZXhwIjoxNjcxNzQ1NDMxLCJuYmYiOjE2NzE3NDU0MzEsImlhdCI6MTY3MTc0NTQzMSwianRpIjoiand0SUQiLCJuYW1lIjoidmFsdWUifQ"
+	testClaimsString  = fmt.Sprintf(`{"iss":"http://localhost/iss","sub":"userID","aud":"http://localhost/test/aud","exp":1671745431,"nbf":1671745431,"iat":1671745431,"jti":"jwtID","%s":"%s"}`, testPrivateClaim1Key, testPrivateClaim1Value)
+	testClaimsEncoded = "eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0L2lzcyIsInN1YiI6InVzZXJJRCIsImF1ZCI6Imh0dHA6Ly9sb2NhbGhvc3QvdGVzdC9hdWQiLCJleHAiOjE2NzE3NDU0MzEsIm5iZiI6MTY3MTc0NTQzMSwiaWF0IjoxNjcxNzQ1NDMxLCJqdGkiOiJqd3RJRCIsIm5hbWUiOiJ2YWx1ZSJ9"
 )
 
 func TestClaims_UnmarshalJSON(t *testing.T) {
@@ -153,7 +153,7 @@ func TestClaims_Encode(t *testing.T) {
 		h := NewClaimsSet(
 			WithIssuer("http://localhost/iss"),
 			WithSubject("userID"),
-			WithAudience("http://localhost/aud"),
+			WithAudience("http://localhost/test/aud"),
 			WithExpirationTime(time.Date(2022, 12, 23, 6, 43, 51, 0, time.FixedZone("Asia/Tokyo", 9*60*60))),
 			WithNotBefore(time.Date(2022, 12, 23, 6, 43, 51, 0, time.FixedZone("Asia/Tokyo", 9*60*60))),
 			WithIssuedAt(time.Date(2022, 12, 23, 6, 43, 51, 0, time.FixedZone("Asia/Tokyo", 9*60*60))),

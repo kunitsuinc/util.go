@@ -43,7 +43,7 @@ var (
 	}
 	testHeader = &Header{
 		Algorithm:                       string(jwa.HS256),
-		JwksURL:                         "http://localhost/jwks",
+		JWKSetURL:                       "http://localhost/jwks",
 		JSONWebKey:                      _jwk,
 		KeyID:                           "testKeyID",
 		X509URL:                         "http://localhost/x5u",
@@ -89,7 +89,7 @@ func TestHeader_MarshalJSON(t *testing.T) {
 		t.Parallel()
 		h := NewHeader(
 			WithAlgorithm(string(jwa.HS256)),
-			WithJwksURL("http://localhost/jwks"),
+			WithJWKSetURL("http://localhost/jwks"),
 			WithJSONWebKey(_jwk),
 			WithKeyID("testKeyID"),
 			WithX509URL("http://localhost/x5u"),

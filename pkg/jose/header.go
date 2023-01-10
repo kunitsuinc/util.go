@@ -12,6 +12,11 @@ import (
 	"github.com/kunitsuinc/util.go/pkg/jose/jwk"
 )
 
+var (
+	ErrJSONWebKeyIsEmpty = errors.New(`jose: jwk is empty`)
+	ErrJWKSetIsEmpty     = errors.New(`jose: jku is empty`)
+)
+
 // Header
 //
 //   - ref. JOSE Header - JSON Web Signature (JWS)  https://www.rfc-editor.org/rfc/rfc7515#section-4
@@ -33,11 +38,11 @@ type Header struct {
 	//   - ref. "zip" (Compression Algorithm) Header Parameter - JSON Web Encryption (JWE) https://www.rfc-editor.org/rfc/rfc7516#section-4.1.3
 	CompressionAlgorithm string `json:"zip,omitempty"`
 
-	// JwksURL
+	// JWKSetURL
 	//
 	//   - ref. "jku" (JWK Set URL) Header Parameter - JSON Web Signature (JWS)  https://www.rfc-editor.org/rfc/rfc7515#section-4.1.2
 	//   - ref. "jku" (JWK Set URL) Header Parameter - JSON Web Encryption (JWE) https://www.rfc-editor.org/rfc/rfc7516#section-4.1.4
-	JwksURL string `json:"jku,omitempty"`
+	JWKSetURL string `json:"jku,omitempty"`
 
 	// JSONWebKey
 	//
@@ -76,6 +81,17 @@ type Header struct {
 	X509CertificateSHA256Thumbprint string `json:"x5t#S256,omitempty"` //nolint:tagliatelle
 
 	// Type
+	//
+	// The "typ" (type) Header Parameter is used by JWS applications to
+	// declare the media type [IANA.MediaTypes] of this complete JWS.  This
+	// is intended for use by the application when more than one kind of
+	// object could be present in an application data structure that can
+	// contain a JWS; the application can use this value to disambiguate
+	// among the different kinds of objects that might be present.  It will
+	// typically not be used by applications when the kind of object is
+	// already known.  This parameter is ignored by JWS implementations; any
+	// processing of this parameter is performed by the JWS application.
+	// Use of this Header Parameter is OPTIONAL.
 	//
 	//   - ref. "typ" (Type) Header Parameter - JSON Web Signature (JWS)  https://www.rfc-editor.org/rfc/rfc7515#section-4.1.9
 	//   - ref. "typ" (Type) Header Parameter - JSON Web Encryption (JWE) https://www.rfc-editor.org/rfc/rfc7516#section-4.1.11
@@ -122,9 +138,9 @@ func WithCompressionAlgorithm(zip string) HeaderParameter {
 	}
 }
 
-func WithJwksURL(jku string) HeaderParameter {
+func WithJWKSetURL(jku string) HeaderParameter {
 	return func(h *Header) {
-		h.JwksURL = jku
+		h.JWKSetURL = jku
 	}
 }
 
@@ -282,8 +298,8 @@ func (h *Header) Encode() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
-func (h *Header) Decode(header string) error {
-	decoded, err := base64.RawURLEncoding.DecodeString(header)
+func (h *Header) Decode(headerEncoded string) error {
+	decoded, err := base64.RawURLEncoding.DecodeString(headerEncoded)
 	if err != nil {
 		return fmt.Errorf("base64.RawURLEncoding.DecodeString: %w", err)
 	}

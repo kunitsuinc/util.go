@@ -140,7 +140,10 @@ func JWS(alg string) JWSAlgorithm { //nolint:cyclop,ireturn
 		return a
 	}
 
-	return _JWSAlgorithmFunc{}
+	return _JWSAlgorithmFunc{
+		sign:   func(_ any, _ string) (_ string, _ error) { return "", ErrNotImplemented },
+		verify: func(_ any, _, _ string) (_ error) { return ErrNotImplemented },
+	}
 }
 
 type (

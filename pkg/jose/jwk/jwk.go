@@ -2,20 +2,33 @@ package jwk
 
 import (
 	"context"
+	"crypto"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rsa"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/kunitsuinc/util.go/pkg/cache"
 	slicez "github.com/kunitsuinc/util.go/pkg/slices"
 )
 
+var (
+	ErrCurveNotSupported    = errors.New("curve not supported")
+	ErrKeyIsNotForAlgorithm = errors.New("key is not for algorithm")
+)
+
 // ref. JSON Web Key (JWK) https://www.rfc-editor.org/rfc/rfc7517
 
-type JWKSetURI = string //nolint:revive
+type JWKSetURL = string //nolint:revive
 
 // JWKSet: A JWK Set is a JSON object that represents a set of JWKs.
 //
@@ -85,17 +98,31 @@ type JSONWebKey struct {
 	//   - ref. https://www.rfc-editor.org/rfc/rfc7518#section-6.2
 	//
 
-	// Crv: "crv" parameter identifies the cryptographic curve used with the key.
+	// Crv
+	//
+	// The "crv" (curve) parameter identifies the cryptographic curve used
+	// with the key.  Curve values from [DSS] used by this specification
+	// are:
+	//
+	//	o  "P-256"
+	//	o  "P-384"
+	//	o  "P-521"
 	//
 	//   - ref. https://www.rfc-editor.org/rfc/rfc7518#section-6.2.1.1
 	Crv string `json:"crv,omitempty"`
 
-	// X: "x" (X Coordinate) parameter contains the x coordinate for the Elliptic Curve point.
+	// X
+	//
+	// The "x" (x coordinate) parameter contains the x coordinate for the
+	// Elliptic Curve point.
 	//
 	//   - ref. https://www.rfc-editor.org/rfc/rfc7518#section-6.2.1.2
 	X string `json:"x,omitempty"`
 
-	// Y: "y" (Y Coordinate) parameter contains the y coordinate for the Elliptic Curve point.
+	// Y
+	//
+	// The "y" (y coordinate) parameter contains the y coordinate for the
+	// Elliptic Curve point.
 	//
 	//   - ref. https://www.rfc-editor.org/rfc/rfc7518#section-6.2.1.3
 	Y string `json:"y,omitempty"`
@@ -182,6 +209,196 @@ type OtherPrimesInfo struct {
 	FactorCRTCoefficient string `json:"t,omitempty"`
 }
 
+type JSONWebKeyOption func(jwk *JSONWebKey)
+
+func WithKeyType(kty string) JSONWebKeyOption {
+	return func(jwk *JSONWebKey) {
+		jwk.KeyType = kty
+	}
+}
+
+func WithKeyID(kid string) JSONWebKeyOption {
+	return func(jwk *JSONWebKey) {
+		jwk.KeyID = kid
+	}
+}
+
+func WithAlgorithm(alg string) JSONWebKeyOption {
+	return func(jwk *JSONWebKey) {
+		jwk.Algorithm = alg
+	}
+}
+
+// TODO: WithPublicKeyUse() and so on
+
+func (jwk *JSONWebKey) EncodeRSAPublicKey(key *rsa.PublicKey, opts ...JSONWebKeyOption) *JSONWebKey {
+	if jwk == nil {
+		jwk = new(JSONWebKey)
+	}
+	for _, opt := range opts {
+		opt(jwk)
+	}
+	jwk.KeyType = "RSA"
+	jwk.N = base64.RawURLEncoding.EncodeToString(key.N.Bytes())
+	jwk.E = base64.RawURLEncoding.EncodeToString([]byte(strconv.Itoa(key.E)))
+	return jwk
+}
+
+func (jwk *JSONWebKey) DecodeRSAPublicKey() (*rsa.PublicKey, error) {
+	n, err := base64.RawURLEncoding.DecodeString(jwk.N)
+	if err != nil {
+		return nil, fmt.Errorf("base64.RawURLEncoding.DecodeString: JSONWebKey.N: %w", err)
+	}
+
+	eBytes, err := base64.RawURLEncoding.DecodeString(jwk.E)
+	if err != nil {
+		return nil, fmt.Errorf("base64.RawURLEncoding.DecodeString: JSONWebKey.E: %w", err)
+	}
+
+	e, err := strconv.Atoi(string(eBytes))
+	if err != nil {
+		return nil, fmt.Errorf("strconv.Atoi: JSONWebKey.E: %w", err)
+	}
+
+	return &rsa.PublicKey{
+		N: big.NewInt(0).SetBytes(n),
+		E: e,
+	}, nil
+}
+
+func (jwk *JSONWebKey) EncodeRSAPrivateKey(key *rsa.PrivateKey, opts ...JSONWebKeyOption) *JSONWebKey {
+	jwk = jwk.EncodeRSAPublicKey(&key.PublicKey)
+	for _, opt := range opts {
+		opt(jwk)
+	}
+	jwk.D = base64.RawURLEncoding.EncodeToString(key.D.Bytes())
+	jwk.P = base64.RawURLEncoding.EncodeToString(key.Primes[0].Bytes())
+	jwk.Q = base64.RawURLEncoding.EncodeToString(key.Primes[1].Bytes())
+	return jwk
+}
+
+func (jwk *JSONWebKey) DecodeRSAPrivateKey() (*rsa.PrivateKey, error) {
+	pub, err := jwk.DecodeRSAPublicKey()
+	if err != nil {
+		return nil, err
+	}
+
+	d, err := base64.RawURLEncoding.DecodeString(jwk.D)
+	if err != nil {
+		return nil, fmt.Errorf("base64.RawURLEncoding.DecodeString: JSONWebKey.D: %w", err)
+	}
+
+	p, err := base64.RawURLEncoding.DecodeString(jwk.P)
+	if err != nil {
+		return nil, fmt.Errorf("base64.RawURLEncoding.DecodeString: JSONWebKey.P: %w", err)
+	}
+
+	q, err := base64.RawURLEncoding.DecodeString(jwk.Q)
+	if err != nil {
+		return nil, fmt.Errorf("base64.RawURLEncoding.DecodeString: JSONWebKey.Q: %w", err)
+	}
+
+	return &rsa.PrivateKey{
+		PublicKey: *pub,
+		D:         big.NewInt(0).SetBytes(d),
+		Primes: []*big.Int{
+			big.NewInt(0).SetBytes(p),
+			big.NewInt(0).SetBytes(q),
+		},
+	}, nil
+}
+
+func (jwk *JSONWebKey) EncodeECDSAPublicKey(key *ecdsa.PublicKey, opts ...JSONWebKeyOption) *JSONWebKey {
+	if jwk == nil {
+		jwk = new(JSONWebKey)
+	}
+	for _, opt := range opts {
+		opt(jwk)
+	}
+	jwk.Crv = key.Params().Name
+	jwk.X = base64.RawURLEncoding.EncodeToString(key.X.Bytes())
+	jwk.Y = base64.RawURLEncoding.EncodeToString(key.Y.Bytes())
+	return jwk
+}
+
+func (jwk *JSONWebKey) DecodeECDSAPublicKey() (*ecdsa.PublicKey, error) {
+	var crv elliptic.Curve
+	switch jwk.Crv {
+	case "P-256":
+		crv = elliptic.P256()
+	case "P-384":
+		crv = elliptic.P384()
+	case "P-521":
+		crv = elliptic.P521()
+	default:
+		return nil, fmt.Errorf("crv=%s: %w", jwk.Crv, ErrCurveNotSupported)
+	}
+
+	x, err := base64.RawURLEncoding.DecodeString(jwk.X)
+	if err != nil {
+		return nil, fmt.Errorf("base64.RawURLEncoding.DecodeString: JSONWebKey.X: %w", err)
+	}
+
+	y, err := base64.RawURLEncoding.DecodeString(jwk.Y)
+	if err != nil {
+		return nil, fmt.Errorf("base64.RawURLEncoding.DecodeString: JSONWebKey.Y: %w", err)
+	}
+
+	return &ecdsa.PublicKey{
+		Curve: crv,
+		X:     big.NewInt(0).SetBytes(x),
+		Y:     big.NewInt(0).SetBytes(y),
+	}, nil
+}
+
+func (jwk *JSONWebKey) EncodeECDSAPrivateKey(key *ecdsa.PrivateKey, opts ...JSONWebKeyOption) *JSONWebKey {
+	jwk = jwk.EncodeECDSAPublicKey(&key.PublicKey)
+	for _, opt := range opts {
+		opt(jwk)
+	}
+	jwk.D = base64.RawURLEncoding.EncodeToString(key.D.Bytes())
+	return jwk
+}
+
+func (jwk *JSONWebKey) DecodeECDSAPrivateKey() (*ecdsa.PrivateKey, error) {
+	pub, err := jwk.DecodeECDSAPublicKey()
+	if err != nil {
+		return nil, err
+	}
+
+	d, err := base64.RawURLEncoding.DecodeString(jwk.D)
+	if err != nil {
+		return nil, fmt.Errorf("base64.RawURLEncoding.DecodeString: JSONWebKey.X: %w", err)
+	}
+
+	return &ecdsa.PrivateKey{
+		PublicKey: *pub,
+		D:         big.NewInt(0).SetBytes(d),
+	}, nil
+}
+
+func (jwk *JSONWebKey) DecodePublicKey(alg string) (crypto.PublicKey, error) {
+	switch {
+	case strings.HasPrefix(alg, "RS") || strings.HasPrefix(alg, "PS"):
+		return jwk.DecodeRSAPublicKey()
+	case strings.HasPrefix(alg, "ES"):
+		return jwk.DecodeECDSAPublicKey()
+	}
+
+	return nil, fmt.Errorf("alg=%s: %w", alg, ErrKeyIsNotForAlgorithm)
+}
+
+func (jwk *JSONWebKey) DecodePrivateKey(alg string) (crypto.PrivateKey, error) {
+	switch {
+	case strings.HasPrefix(alg, "RS") || strings.HasPrefix(alg, "PS"):
+		return jwk.DecodeRSAPrivateKey()
+	case strings.HasPrefix(alg, "ES"):
+		return jwk.DecodeECDSAPrivateKey()
+	}
+
+	return nil, fmt.Errorf("alg=%s: %w", alg, ErrKeyIsNotForAlgorithm)
+}
+
 type Client struct { //nolint:revive
 	client     *http.Client
 	cacheStore *cache.Store[*JWKSet]
@@ -221,9 +438,9 @@ func WithCacheStore(store *cache.Store[*JWKSet]) ClientOption {
 
 var ErrResponseIsNotCacheable = errors.New("jwk: response is not cacheable")
 
-func (d *Client) GetJWKSet(ctx context.Context, jwksURI JWKSetURI) (*JWKSet, error) {
-	return d.cacheStore.GetOrSet(jwksURI, func() (*JWKSet, error) { //nolint:wrapcheck
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, jwksURI, nil)
+func (d *Client) GetJWKSet(ctx context.Context, jwksURL JWKSetURL) (*JWKSet, error) {
+	return d.cacheStore.GetOrSet(jwksURL, func() (*JWKSet, error) { //nolint:wrapcheck
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, jwksURL, nil)
 		if err != nil {
 			return nil, fmt.Errorf("http.NewRequestWithContext: %w", err)
 		}
@@ -254,8 +471,8 @@ var (
 	Default = NewClient(context.Background())
 )
 
-func GetJWKSet(ctx context.Context, jwksURI JWKSetURI) (*JWKSet, error) {
-	return Default.GetJWKSet(ctx, jwksURI)
+func GetJWKSet(ctx context.Context, jwksURL JWKSetURL) (*JWKSet, error) {
+	return Default.GetJWKSet(ctx, jwksURL)
 }
 
 var ErrKidNotFound = errors.New("jwk: kid not found in jwks")
@@ -267,5 +484,16 @@ func (jwks *JWKSet) GetJSONWebKey(kid string) (*JSONWebKey, error) {
 		}
 	}
 
-	return nil, ErrKidNotFound
+	return nil, fmt.Errorf("kid=%s: %w", kid, ErrKidNotFound)
+}
+
+func HandlerFunc(jwks *JWKSet) (http.HandlerFunc, error) {
+	b, err := json.Marshal(jwks)
+	if err != nil {
+		return nil, fmt.Errorf("json.Marshal: %w", err)
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write(b)
+	}, nil
 }
