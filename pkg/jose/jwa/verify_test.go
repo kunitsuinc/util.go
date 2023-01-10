@@ -256,7 +256,7 @@ var verifyTestCases = map[string]struct {
 		signingInput:     "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0",
 		signatureEncoded: "failure",
 		errHandler: func(t *testing.T, err error) { //nolint:thelper
-			if expect := "len(signature)=5 != keySize*2=64: failed to verify signature"; err == nil || !strings.Contains(err.Error(), expect) {
+			if expect := "len(signature)=5 != keySize*2=64: jwa: failed to verify signature"; err == nil || !strings.Contains(err.Error(), expect) {
 				t.Errorf("❌: err != expect(%s): %v", expect, err)
 			}
 		},
@@ -267,7 +267,7 @@ var verifyTestCases = map[string]struct {
 		signingInput:     "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0",
 		signatureEncoded: "failure_failure_failure_failure_failure_failure_failure_failure_failure_failure_failur",
 		errHandler: func(t *testing.T, err error) { //nolint:thelper
-			if expect := "ecdsa.Verify: failed to verify signature"; err == nil || !strings.Contains(err.Error(), expect) {
+			if expect := "ecdsa.Verify: jwa: failed to verify signature"; err == nil || !strings.Contains(err.Error(), expect) {
 				t.Errorf("❌: err != expect(%s): %v", expect, err)
 			}
 		},

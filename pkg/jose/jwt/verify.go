@@ -71,8 +71,10 @@ func verifyClaimsSet(cs *ClaimsSet, vo *verifyOption, now time.Time) error {
 		return fmt.Errorf("nbf=%d >= now=%d: %w", cs.NotBefore, now.Unix(), ErrTokenIsExpired)
 	}
 
-	if vo.aud != "" && vo.aud != cs.Audience {
-		return fmt.Errorf("want=%s got=%s: %w", vo.aud, cs.Audience, ErrAudienceIsNotMatch)
+	if vo.aud != "" {
+		if err := verifyAudience(cs, vo.aud); err != nil {
+			return err
+		}
 	}
 
 	if vo.verifyPrivateClaimsFunc != nil {
@@ -82,4 +84,13 @@ func verifyClaimsSet(cs *ClaimsSet, vo *verifyOption, now time.Time) error {
 	}
 
 	return nil
+}
+
+func verifyAudience(cs *ClaimsSet, aud string) error {
+	for _, got := range cs.Audience {
+		if aud == got {
+			return nil
+		}
+	}
+	return fmt.Errorf("want=%v got=%v: %w", aud, cs.Audience, ErrAudienceIsNotMatch)
 }

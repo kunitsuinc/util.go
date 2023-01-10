@@ -19,6 +19,13 @@ func TestRegisterJWSAlgorithm(t *testing.T) { //nolint:paralleltest
 		if err := jwa.JWS("TEST").Verify(0, "TEST", "TEST"); err != nil {
 			t.Errorf("❌: err != nil: %v", err)
 		}
+		jwa.RegisterJWSAlgorithmFunc("TEST2", nil, nil)
+		if _, err := jwa.JWS("TEST2").Sign(0, "TEST2"); !errors.Is(err, jwa.ErrNotImplemented) {
+			t.Errorf("❌: err != jwa.ErrNotImplemented: %v", err)
+		}
+		if err := jwa.JWS("TEST2").Verify(0, "TEST2", "TEST2"); !errors.Is(err, jwa.ErrNotImplemented) {
+			t.Errorf("❌: err != jwa.ErrNotImplemented: %v", err)
+		}
 		if _, err := jwa.JWS("NotImplemented").Sign(0, "NotImplemented"); !errors.Is(err, jwa.ErrNotImplemented) {
 			t.Errorf("❌: err != jwa.ErrNotImplemented: %v", err)
 		}

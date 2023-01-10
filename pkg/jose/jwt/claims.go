@@ -50,7 +50,7 @@ type ClaimsSet struct {
 	// Use of this claim is OPTIONAL.
 	//
 	//   - ref. https://www.rfc-editor.org/rfc/rfc7519#section-4.1.3
-	Audience string `json:"aud,omitempty"`
+	Audience []string `json:"aud,omitempty"`
 
 	// ExpirationTime
 	//
@@ -110,9 +110,9 @@ func WithSubject(sub string) Claims {
 	}
 }
 
-func WithAudience(aud string) Claims {
+func WithAudience(aud ...string) Claims {
 	return func(c *ClaimsSet) {
-		c.Audience = aud
+		c.Audience = append(c.Audience, aud...)
 	}
 }
 
