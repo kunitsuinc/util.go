@@ -15,26 +15,6 @@ var (
 	ErrAudienceIsNotMatch = errors.New("jwt: audience is not match")
 )
 
-func New(key any, header *jose.Header, claimsSet *ClaimsSet) (token string, err error) {
-	headerEncoded, err := header.Encode()
-	if err != nil {
-		return "", fmt.Errorf("(*jose.Header).Encode: %w", err)
-	}
-
-	claimsSetEncoded, err := claimsSet.Encode()
-	if err != nil {
-		return "", fmt.Errorf("(*jwt.ClaimsSet).Encode: %w", err)
-	}
-
-	signingInput := headerEncoded + "." + claimsSetEncoded
-	signatureEncoded, err := jws.Sign(header.Algorithm, key, signingInput)
-	if err != nil {
-		return "", fmt.Errorf("jws.Sign: %w", err)
-	}
-
-	return signingInput + "." + signatureEncoded, nil
-}
-
 type verifyOption struct {
 	aud                     string
 	verifyPrivateClaimsFunc func(privateClaims PrivateClaims) error
